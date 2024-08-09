@@ -104,19 +104,19 @@ def speak(text):
     engine.runAndWait()
 
 def listen():
-    with sr.Microphone() as source:
-        print("Escuchando...")
-        audio = recognizer.listen(source)
-        try:
-            text = recognizer.recognize_google(audio, language='es-ES')
-            print(f"Usuario dijo: {text}")
-            return text
-        except sr.UnknownValueError:
-            print("No se entendió el audio.")
-            return ""
-        except sr.RequestError as e:
-            print(f"Error en la solicitud: {e}")
-            return ""
+    text = ""
+    while text == "":
+        with sr.Microphone() as source:
+            print("Escuchando...")
+            audio = recognizer.listen(source)
+            try:
+                text = recognizer.recognize_google(audio, language='es-ES')
+                print(f"Usuario dijo: {text}")
+            except sr.UnknownValueError:
+                print("No se entendió el audio.")
+            except sr.RequestError as e:
+                print(f"Error en la solicitud: {e}")
+    return text
         
 # Selector of last div for
 def get_full_text_of_last_div(driver, css_selector, data_attribute, value_of_description_in_attribute):
