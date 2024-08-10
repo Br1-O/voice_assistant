@@ -19,6 +19,7 @@ from dotenv import load_dotenv
 import platform
 import subprocess
 import ctypes
+import atexit
 
 # for speech recognition
 import pyttsx3
@@ -105,18 +106,42 @@ def speak(text):
 
 def listen():
     text = ""
-    while text == "":
-        with sr.Microphone() as source:
-            print("Escuchando...")
-            audio = recognizer.listen(source)
+    with sr.Microphone() as source:
+        recognizer.adjust_for_ambient_noise(source)  # Adjust for ambient noise
+        print("Escuchando...")
+
+        while text == "":
             try:
-                text = recognizer.recognize_google(audio, language='es-ES')
-                print(f"Usuario dijo: {text}")
+                audio = recognizer.listen(source, timeout=5, phrase_time_limit=10)  # Set a timeout for listening
+                generalSpeak = recognizer.recognize_google(audio, language='es-ES')
+                
+                if "viernes" in generalSpeak.lower():  # Case-insensitive check
+                    speak("Te escucho")
+                    print("Esperando comando...")
+
+                    while text == "":
+                        try:
+                            # Listen for the actual command
+                            command_audio = recognizer.listen(source, timeout=5, phrase_time_limit=10)
+                            text = recognizer.recognize_google(command_audio, language='es-ES')
+                            speak("Entendido.")
+                            print(f"Usuario dijo: {text}")
+                        except sr.WaitTimeoutError:
+                            print("Tiempo de espera agotado, no se detectó audio.")
+                        except sr.UnknownValueError:
+                            print("No se entendió el audio.")
+                        except sr.RequestError as e:
+                            print(f"Error en la solicitud: {e}")
+                else:
+                    print(f"General speech detected: {generalSpeak}")
+            except sr.WaitTimeoutError:
+                print("Tiempo de espera agotado, no se detectó audio.")
             except sr.UnknownValueError:
                 print("No se entendió el audio.")
             except sr.RequestError as e:
                 print(f"Error en la solicitud: {e}")
     return text
+
         
 # Selector of last div for
 def get_full_text_of_last_div(driver, css_selector, data_attribute, value_of_description_in_attribute):
@@ -161,3 +186,22 @@ def get_full_text_of_last_div(driver, css_selector, data_attribute, value_of_des
     except Exception as e:
         print(f"An error occurred: {e}")
         return None
+    
+def listen_without_name_call():
+    text = ""
+    with sr.Microphone() as source:
+        recognizer.adjust_for_ambient_noise(source)  # Adjust for ambient noise
+        print("Escuchando...")
+        while text == "":
+            try:
+                audio = recognizer.listen(source, timeout=5, phrase_time_limit=10)  # Set a timeout for listening                
+                text = recognizer.recognize_google(audio, language='es-ES')
+            except sr.WaitTimeoutError:
+                print("Tiempo de espera agotado, no se detectó audio.")
+            except sr.UnknownValueError:
+                print("No se entendió el audio.")
+            except sr.RequestError as e:
+                print(f"Error en la solicitud: {e}")
+    speak("Entendido.")
+    print(f"Usuario dijo: {text}")
+    return text
